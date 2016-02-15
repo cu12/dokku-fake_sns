@@ -122,6 +122,17 @@ case "$1" in
     service_logs "$2" "$3"
     ;;
 
+  $PLUGIN_COMMAND_PREFIX:listtopics)
+    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+    verify_service_name "$2"
+    SERVICE="$2"
+    SERVICE_NAME="$(get_service_name "$SERVICE")"
+    local AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
+    [[ -n $SSH_TTY ]] && stty -opost
+    docker exec "$SERVICE_NAME" bash -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text"
+    [[ -n $SSH_TTY ]] && stty opost
+    ;;
+
   $PLUGIN_COMMAND_PREFIX:logs)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
@@ -200,8 +211,9 @@ case "$1" in
     $PLUGIN_COMMAND_PREFIX:destroy <name>, Delete the $PLUGIN_SERVICE service and stop its container if there are no links left
     $PLUGIN_COMMAND_PREFIX:link <name> <app>, Link the $PLUGIN_SERVICE service to the app
     $PLUGIN_COMMAND_PREFIX:unlink <name> <app>, Unlink the $PLUGIN_SERVICE service from the app
-    $PLUGIN_COMMAND_PREFIX:createtopic <name>, Create an SNS topic on $PLUGIN_SERVICE
-    $PLUGIN_COMMAND_PREFIX:destroytopic <name> <file>, Remove an SNS topic on $PLUGIN_SERVICE
+    $PLUGIN_COMMAND_PREFIX:createtopic <name> <topic>, Create an SNS topic on $PLUGIN_SERVICE
+    $PLUGIN_COMMAND_PREFIX:destroytopic <name> <topic>, Remove an SNS topic on $PLUGIN_SERVICE
+    $PLUGIN_COMMAND_PREFIX:listtopics <name>, List all SNS topics in specific $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:connect <name>, NOT IMPLEMENTED
     $PLUGIN_COMMAND_PREFIX:logs <name> [-t], Print the most recent log(s) for this service
     $PLUGIN_COMMAND_PREFIX:restart <name>, Graceful shutdown and restart of the $PLUGIN_SERVICE service container
