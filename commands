@@ -102,7 +102,7 @@ case "$1" in
     service_unlink "$2" "$3"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:createtopic)
+  $PLUGIN_COMMAND_PREFIX:addtopic)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an SNS topic name"
     verify_service_name "$2"
@@ -116,7 +116,7 @@ case "$1" in
     dokku_log_info2 "$PLUGIN_SERVICE topic created: $TOPIC_NAME"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:destroytopic)
+  $PLUGIN_COMMAND_PREFIX:removetopic)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an SNS topic name"
     verify_service_name "$2"
@@ -185,26 +185,6 @@ case "$1" in
     service_list
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:clone)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    SERVICE="$2"
-
-    dokku_log_fail "Not yet implemented"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:expose)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_port_expose "$2" "${@:3}"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:unexpose)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    service_port_unexpose "$2"
-    ;;
-
   $PLUGIN_COMMAND_PREFIX:promote)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an app to run the command on"
@@ -219,17 +199,13 @@ case "$1" in
     $PLUGIN_COMMAND_PREFIX:destroy <name>, Delete the $PLUGIN_SERVICE service and stop its container if there are no links left
     $PLUGIN_COMMAND_PREFIX:link <name> <app>, Link the $PLUGIN_SERVICE service to the app
     $PLUGIN_COMMAND_PREFIX:unlink <name> <app>, Unlink the $PLUGIN_SERVICE service from the app
-    $PLUGIN_COMMAND_PREFIX:createtopic <name> <topic>, Create an SNS topic on $PLUGIN_SERVICE
-    $PLUGIN_COMMAND_PREFIX:destroytopic <name> <topic>, Remove an SNS topic on $PLUGIN_SERVICE
+    $PLUGIN_COMMAND_PREFIX:createtopic <name> <topic>, Creates an SNS topic
+    $PLUGIN_COMMAND_PREFIX:destroytopic <name> <topic>, Removes an SNS topic
     $PLUGIN_COMMAND_PREFIX:listtopics <name>, List all SNS topics in specific $PLUGIN_SERVICE service
-    $PLUGIN_COMMAND_PREFIX:connect <name>, NOT IMPLEMENTED
     $PLUGIN_COMMAND_PREFIX:logs <name> [-t], Print the most recent log(s) for this service
     $PLUGIN_COMMAND_PREFIX:restart <name>, Graceful shutdown and restart of the $PLUGIN_SERVICE service container
     $PLUGIN_COMMAND_PREFIX:info <name>, Print the connection information
     $PLUGIN_COMMAND_PREFIX:list, List all $PLUGIN_SERVICE services
-    $PLUGIN_COMMAND_PREFIX:clone <name> <new-name>, NOT IMPLEMENTED
-    $PLUGIN_COMMAND_PREFIX:expose <name> [port], Expose a $PLUGIN_SERVICE service on custom port if provided (random port otherwise)
-    $PLUGIN_COMMAND_PREFIX:unexpose <name>, Unexpose a previously exposed $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:start <name>, Start a previously stopped $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:stop <name>, Stop a running $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:promote <name> <app>, Promote service <name> as ${PLUGIN_DEFAULT_ALIAS}_URL in <app>

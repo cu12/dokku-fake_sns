@@ -2,27 +2,6 @@
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$(dirname "$0")/config"
 
-get_random_ports() {
-  local iterations="${1:-1}"
-  for (( i=0; i < iterations; i++ )); do
-    local port=$RANDOM
-    local quit=0
-    while [ "$quit" -ne 1 ]; do
-      netstat -an | grep $port > /dev/null
-      if [ $? -gt 0 ]; then
-        quit=1
-      else
-        port=$((port + 1))
-      fi
-    done
-    echo $port
-  done
-}
-
-get_container_ip() {
-  docker inspect --format '{{ .NetworkSettings.IPAddress }}' "$1"
-}
-
 verify_service_name() {
   local SERVICE="$1"
   [[ ! -n "$SERVICE" ]] && dokku_log_fail "(verify_service_name) SERVICE must not be null"
@@ -67,17 +46,6 @@ service_list() {
     done
     printf "%b" "$LIST" | column -t -s,
   fi
-}
-
-service_exposed_ports() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  [[ ! -f $PORT_FILE ]] && echo '-' && return 0
-  local PORTS=($(cat "$PORT_FILE"))
-  for (( i=0; i < ${#PLUGIN_DATASTORE_PORTS[@]}; i++ )); do
-    echo -n "${PLUGIN_DATASTORE_PORTS[i]}->${PORTS[i]} "
-  done
 }
 
 service_link() {
@@ -160,74 +128,6 @@ service_status() {
   echo "stopped" && return 0
 }
 
-service_port_expose() {
-  service_start "$1"
-  service_port_unpause "$1" "true" "${@:2}"
-}
-
-service_port_pause() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local EXPOSED_NAME="$(get_service_name "$SERVICE").ambassador"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  local LOG_FAIL="$2"
-
-  if [[ "$LOG_FAIL" == "true" ]]; then
-    [[ ! -f "$PORT_FILE" ]] && dokku_log_fail "Service not exposed"
-  else
-    [[ ! -f "$PORT_FILE" ]] && return 0
-  fi
-
-  docker stop "$EXPOSED_NAME" > /dev/null
-  docker rm "$EXPOSED_NAME" > /dev/null
-  if [[ "$LOG_FAIL" == "true" ]]; then
-    dokku_log_info1 "Service $SERVICE unexposed"
-  fi
-}
-
-service_port_unexpose() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  service_port_pause "$SERVICE" "true"
-  rm -rf "$PORT_FILE"
-}
-
-service_port_unpause() {
-  local SERVICE="$1"
-  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-  local SERVICE_NAME=$(get_service_name "$SERVICE")
-  local EXPOSED_NAME="${SERVICE_NAME}.ambassador"
-  local PORT_FILE="$SERVICE_ROOT/PORT"
-  local LOG_FAIL="$2"
-  local PORTS=(${@:3})
-  PORTS=(${PORTS[@]:-$(get_random_ports ${#PLUGIN_DATASTORE_PORTS[@]})})
-  local ID=$(cat "$SERVICE_ROOT/ID")
-
-  [[ "${#PORTS[@]}" != "${#PLUGIN_DATASTORE_PORTS[@]}" ]] && dokku_log_fail "${#PLUGIN_DATASTORE_PORTS[@]} ports to be exposed need to be provided"
-
-  if [[ "$LOG_FAIL" == "true" ]]; then
-    [[ -f "$PORT_FILE" ]] && PORTS=($(cat "$PORT_FILE")) && dokku_log_fail "Service $SERVICE already exposed on port(s) ${PORTS[*]}"
-  else
-    [[ ! -f "$PORT_FILE" ]] && return 0
-    PORTS=($(cat "$PORT_FILE"))
-  fi
-
-  echo "${PORTS[@]}" > "$PORT_FILE"
-
-  docker run -d --link "$SERVICE_NAME:elasticsearch" --name "$EXPOSED_NAME" $(docker_ports_options "${PORTS[@]}") --restart always --label dokku=ambassador --label dokku.ambassador=elasticsearch svendowideit/ambassador > /dev/null
-  if [[ "$LOG_FAIL" == "true" ]]; then
-    dokku_log_info1 "Service $SERVICE exposed on port(s) ${PORTS[*]}"
-  fi
-}
-
-docker_ports_options() {
-  local PORTS=("$@")
-  for (( i=0; i < ${#PLUGIN_DATASTORE_PORTS[@]}; i++ )); do
-    echo -n "-p ${PORTS[i]}:${PLUGIN_DATASTORE_PORTS[i]} "
-  done
-}
-
 service_start() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
@@ -239,7 +139,6 @@ service_start() {
   local PREVIOUS_ID=$(docker ps -f status=exited --format '{{.Names}}' | grep "^$SERVICE_NAME$" | awk '{print $1}') || true
   if [[ -n $PREVIOUS_ID ]]; then
     docker start "$PREVIOUS_ID" > /dev/null
-    service_port_unpause "$SERVICE"
     dokku_log_info2 "Container started"
   else
     dokku_log_verbose_quiet "No container exists for $SERVICE"
