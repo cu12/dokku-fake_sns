@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export FAKESNS_IMAGE=${FAKESNS_IMAGE:="feathj/fake-sns"}
+export FAKESNS_IMAGE=${FAKESNS_IMAGE:="seayou/fake-sns"}
 export FAKESNS_IMAGE_VERSION=${FAKESNS_IMAGE_VERSION:="latest"}
 export FAKESNS_ROOT=${FAKESNS_ROOT:="/var/lib/dokku/services/fakesns"}
 

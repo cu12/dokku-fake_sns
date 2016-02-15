@@ -30,6 +30,19 @@ verify_service_name() {
   return 0
 }
 
+verify_topic_name() {
+  local SERVICE="$1"
+  local TOPIC_NAME="$2"
+  local AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
+  [[ ! -n "$SERVICE" ]] && dokku_log_fail "(verify_topic_name) SERVICE must not be null"
+  [[ ! -n "$TOPIC_NAME" ]] && dokku_log_fail "(verify_topic_name) TOPIC_NAME must not be null"
+  [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE does not exist"
+  if ! docker exec "$SERVICE" bash -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text | egrep -q ^$TOPIC_NAME$" > /dev/null; then
+    dokku_log_fail "$SERVICE $TOPIC_NAME already exists"
+  fi
+  return 0
+}
+
 service_alias() {
   local SERVICE="$1"
   local SERVICE_NAME=$(get_service_name "$SERVICE")
@@ -145,12 +158,6 @@ service_status() {
   is_container_status "$ID" "Restarting" && echo "restarting" && return 0
   is_container_status "$ID" "Running" && echo "running" && return 0
   echo "stopped" && return 0
-}
-
-service_createtopic() {
-  local SERVICE="$1"
-  local SERVICE_URL=$(service_url "$SERVICE")
-  aws --endpoint $SERVICE_URL create-topic --name "$2" && dokku_log_verbose_quiet "SNS topic created $2"
 }
 
 service_port_expose() {
