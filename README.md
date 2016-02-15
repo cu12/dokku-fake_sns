@@ -28,7 +28,7 @@ sns:destroy <name>              Delete the service and stop its container if the
 sns:info <name>                 Print the connection information
 sns:link <name> <app>           Link the sns service to the app
 sns:list                        List all sns services
-sns:listtopics <name>           List all sns topics for this service
+sns:topics <name>               List all sns topics for this service
 sns:logs <name> [-t]            Print the most recent log(s) for this service
 sns:removetopic <name> <topic>  Removes an sns topic
 sns:restart <name>              Graceful shutdown and restart of the sns service container
