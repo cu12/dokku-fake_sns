@@ -39,7 +39,7 @@ verify_topic_name() {
   [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE does not exist"
   SERVICE_NAME="$(get_service_name "$SERVICE")"
   SERVICE_TOPIC_NAME="$(docker exec $SERVICE_NAME bash -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text | cut -d: -f6 | egrep ^$TOPIC_NAME$" || true)"
-  [[ -n "$SERVICE_TOPIC_NAME" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic $TOPIC_NAME already exist"
+  [[ -n "$SERVICE_TOPIC_NAME" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic already exist: $TOPIC_NAME"
   return 0
 }
 
@@ -232,11 +232,11 @@ service_start() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
   local SERVICE_NAME=$(get_service_name "$SERVICE")
-  local ID=$(docker ps -f status=running | grep "$SERVICE_NAME" | awk '{print $1}') || true
+  local ID=$(docker ps -f status=running --format '{{.Names}}' | egrep "^$SERVICE_NAME$" | awk '{print $1}') || true
   [[ -n $ID ]] && dokku_log_warn "Service is already started" && return 0
 
   dokku_log_info1_quiet "Starting container"
-  local PREVIOUS_ID=$(docker ps -f status=exited | grep "$SERVICE_NAME" | awk '{print $1}') || true
+  local PREVIOUS_ID=$(docker ps -f status=exited --format '{{.Names}}' | grep "^$SERVICE_NAME$" | awk '{print $1}') || true
   if [[ -n $PREVIOUS_ID ]]; then
     docker start "$PREVIOUS_ID" > /dev/null
     service_port_unpause "$SERVICE"
@@ -250,7 +250,7 @@ service_stop() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE";
   local SERVICE_NAME=$(get_service_name "$SERVICE")
-  local ID=$(docker ps -f status=running | grep "$SERVICE_NAME" | awk '{print $1}') || true
+  local ID=$(docker ps -f status=running --format '{{.Names}}' | egrep "^$SERVICE_NAME$" | awk '{print $1}') || true
   [[ -z $ID ]] && dokku_log_warn "Service is already stopped" && return 0
 
   if [[ -n $ID ]]; then
