@@ -106,7 +106,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an SNS topic name"
     verify_service_name "$2"
-    verify_topic_name "$3"
+    verify_topic_name "$2" "$3"
     SERVICE="$2"; TOPIC_NAME="$3"
     SERVICE_NAME="$(get_service_name "$SERVICE")"
     AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
