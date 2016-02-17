@@ -48,6 +48,17 @@ service_list() {
   fi
 }
 
+service_exposed_ports() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local PORT_FILE="$SERVICE_ROOT/PORT"
+  [[ ! -f $PORT_FILE ]] && echo '-' && return 0
+  local PORTS=($(cat "$PORT_FILE"))
+  for (( i=0; i < ${#PLUGIN_DATASTORE_PORTS[@]}; i++ )); do
+    echo -n "${PLUGIN_DATASTORE_PORTS[i]}->${PORTS[i]} "
+  done
+}
+
 service_link() {
   local APP="$2"
   local SERVICE="$1"
