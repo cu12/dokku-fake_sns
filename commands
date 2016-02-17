@@ -111,7 +111,7 @@ case "$1" in
     SERVICE_NAME="$(get_service_name "$SERVICE")"
     AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
     [[ -n $SSH_TTY ]] && stty -opost
-    docker exec "$SERVICE_NAME" bash -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns create-topic --output text --name $TOPIC_NAME" > /dev/null 2>&1 || true
+    docker exec "$SERVICE_NAME" /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns create-topic --output text --name $TOPIC_NAME" > /dev/null 2>&1 || true
     [[ -n $SSH_TTY ]] && stty opost
     dokku_log_info2 "$PLUGIN_SERVICE topic created: $TOPIC_NAME"
     ;;
@@ -125,7 +125,7 @@ case "$1" in
     SERVICE_NAME="$(get_service_name "$SERVICE")"
     AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
     [[ -n $SSH_TTY ]] && stty -opost
-    docker exec "$SERVICE_NAME" bash -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns delete-topic --output text --name $TOPIC_NAME" > /dev/null 2>&1 || true
+    docker exec "$SERVICE_NAME" /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns delete-topic --output text --name $TOPIC_NAME" > /dev/null 2>&1 || true
     [[ -n $SSH_TTY ]] && stty opost
     dokku_log_info2 "$PLUGIN_SERVICE topic deleted: $TOPIC_NAME"
     ;;
@@ -137,7 +137,7 @@ case "$1" in
     SERVICE_NAME="$(get_service_name "$SERVICE")"
     AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
     [[ -n $SSH_TTY ]] && stty -opost
-    docker exec "$SERVICE_NAME" bash -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text"
+    docker exec "$SERVICE_NAME" /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text"
     [[ -n $SSH_TTY ]] && stty opost
     ;;
 
