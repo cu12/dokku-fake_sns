@@ -9,6 +9,32 @@ verify_service_name() {
   return 0
 }
 
+verify_sqs_service_name() {
+  [[ ! -f "$PLUGIN_CORE_AVAILABLE_PATH/elasticmq/config" ]] && dokku_log_fail "ElasticMQ plugin is not installed, please install it to use this command."
+  source "$PLUGIN_CORE_AVAILABLE_PATH/elasticmq/config"
+
+  local SERVICE="$1"
+  [[ ! -n "$SERVICE" ]] && dokku_log_fail "(verify_sqs_service_name) SERVICE must not be null"
+  [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && dokku_log_fail "SQS service $SERVICE does not exist"
+  return 0
+}
+
+verify_queue_name() {
+  [[ ! -f "$PLUGIN_CORE_AVAILABLE_PATH/elasticmq/config" ]] && dokku_log_fail "ElasticMQ plugin is not installed, please install it to use this command."
+  source "$PLUGIN_CORE_AVAILABLE_PATH/elasticmq/config"
+
+  local SERVICE="$1"
+  local QUEUE_NAME="$2"
+  local AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
+  [[ ! -n "$SERVICE" ]] && dokku_log_fail "(verify_queue_name) SERVICE must not be null"
+  [[ ! -n "$QUEUE_NAME" ]] && dokku_log_fail "(verify_queue_name) QUEUE_NAME must not be null"
+  [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && dokku_log_fail "SQS service $SERVICE does not exist"
+  SERVICE_NAME="$(get_service_name "$SERVICE")"
+  SERVICE_QUEUE_NAME="$(docker exec $SERVICE_NAME /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9324 sqs list-queues --output text | cut -d/ -f5 | egrep ^$QUEUE_NAME$" || true)"
+  [[ -z "$SERVICE_QUEUE_NAME" ]] && dokku_log_fail "SQS service $SERVICE queue does not exist: $QUEUE_NAME"
+  return 0
+}
+
 verify_topic_name() {
   local SERVICE="$1"
   local TOPIC_NAME="$2"
@@ -85,6 +111,42 @@ service_link() {
   dokku config:set "$APP" "${ALIAS}_URL=$SERVICE_URL"
 }
 
+service_link_sqs() {
+  local SERVICE="$1"
+  local SERVICE_SQS="$2"
+  local SERVICE_SQS_QUEUE="$5"
+  local SERVICE_URL=$(service_url "$SERVICE")
+  local SERVICE_NAME=$(get_service_name "$SERVICE")
+  local SERVICE_SQS_NAME=$(get_service_name "$SERVICE_SQS")
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local SERVICE_ALIAS=$(service_alias "$SERVICE")
+
+  local AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
+  [[ -n $SSH_TTY ]] && stty -opost
+    local QUEUE_ARN="$(docker exec "$SERVICE_SQS_NAME" /usr/bin/env sh -c "$AWS_CONFIG --endpoint-url http://localhost:9324 sqs get-queue-attributes --queue-url http://localhost:9324/queue/$SERVICE_SQS_QUEUE --attribute-names QueueArn" > /dev/null 2>&1 || true)"
+  [[ -n $SSH_TTY ]] && stty opost
+
+echo $QUEUE_ARN
+#  [[ -n $SSH_TTY ]] && stty -opost
+#    docker exec "$SERVICE_NAME" /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns susbscribe --output text --name $TOPIC_NAME" > /dev/null 2>&1 || true
+#  [[ -n $SSH_TTY ]] && stty opost
+#  dokku_log_info2 "$PLUGIN_SERVICE topic added: $TOPIC_NAME"
+
+
+#  [[ -n $LINK ]] && dokku_log_fail "Already linked as $LINK"
+#  mkdir -p "$SERVICE_ROOT" || dokku_log_fail "Unable to create service directory"
+#  touch "$LINKS_FILE"
+#  echo "$APP" >> "$LINKS_FILE"
+#  sort "$LINKS_FILE" -u -o "$LINKS_FILE"
+
+#  local ALIAS="$PLUGIN_DEFAULT_ALIAS"
+#  if [[ -n $DEFAULT_ALIAS ]]; then
+#    ALIAS=$(service_alternative_alias "$EXISTING_CONFIG")
+#  fi
+#  dokku docker-options:add "$APP" build,deploy,run "--link $SERVICE_NAME:$SERVICE_ALIAS"
+#  dokku config:set "$APP" "${ALIAS}_URL=$SERVICE_URL"
+}
+
 service_alternative_alias() {
   local EXISTING_CONFIG="$1"
   local COLORS=(AQUA BLACK BLUE FUCHSIA GRAY GREEN LIME MAROON NAVY OLIVE PURPLE RED SILVER TEAL WHITE YELLOW)
@@ -137,6 +199,26 @@ service_status() {
   is_container_status "$ID" "Restarting" && echo "restarting" && return 0
   is_container_status "$ID" "Running" && echo "running" && return 0
   echo "stopped" && return 0
+}
+
+service_port_pause() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local EXPOSED_NAME="$(get_service_name "$SERVICE").ambassador"
+  local PORT_FILE="$SERVICE_ROOT/PORT"
+  local LOG_FAIL="$2"
+
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    [[ ! -f "$PORT_FILE" ]] && dokku_log_fail "Service not exposed"
+  else
+    [[ ! -f "$PORT_FILE" ]] && return 0
+  fi
+
+  docker stop "$EXPOSED_NAME" > /dev/null
+  docker rm "$EXPOSED_NAME" > /dev/null
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    dokku_log_info1 "Service $SERVICE unexposed"
+  fi
 }
 
 service_start() {
