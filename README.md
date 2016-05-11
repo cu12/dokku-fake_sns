@@ -1,6 +1,6 @@
 # dokku fake_sns (beta)
 
-fake_sns plugin for dokku. Currently defaults to installing [seayou/fake-sns](https://hub.docker.com/r/seayou/fake-sns/).
+fake_sns plugin for dokku. Currently defaults to installing [seayou/fake-sns](https://hub.docker.com/r/seayou/fake-sns/)
 
 ## requirements
 
