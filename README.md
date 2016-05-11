@@ -46,6 +46,7 @@ dokku sns:create lolipop
 # version to use for the service
 # it *must* be compatible with the
 # official sns image
+# In fact you could any other software that is working with `aws sqs` commands
 export FAKESNS_IMAGE="seayou/fake-sns"
 export FAKESNS_IMAGE_VERSION="latest"
 
