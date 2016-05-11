@@ -94,6 +94,28 @@ case "$1" in
     service_link "$2" "$3"
     ;;
 
+  $PLUGIN_COMMAND_PREFIX:sqs:link)
+    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+    [[ -z $3 ]] && dokku_log_fail "Please specify an SNS topic name"
+    [[ -z $4 ]] && dokku_log_fail "Please specify an SQS service name"
+    [[ -z $5 ]] && dokku_log_fail "Please specify an SQS queue name"
+
+    verify_service_name "$2"
+    verify_topic_name "$2" "$3"
+    verify_sqs_service_name "$4"
+    verify_queue_name "$5"
+
+    service_link_sqs "$2" "$3" "$4" "$5"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:sqs:unlink)
+    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+    [[ -z $3 ]] && dokku_log_fail "Please specify an app to run the command on"
+    verify_app_name "$3"
+    verify_service_name "$2"
+    service_unlink_sqs "$2" "$3"
+    ;;
+
   $PLUGIN_COMMAND_PREFIX:unlink)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an app to run the command on"
