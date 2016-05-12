@@ -26,6 +26,7 @@ dokku plugin:install https://github.com/cu12/dokku-fake_sns.git fake_sns
 ```
 sns:create <name>               Create a sns service with environment variables
 sns:destroy <name>              Delete the service and stop its container if there are no links left
+sns:expose <name> [port]        Expose an sns service on custom port if provided (random port otherwise)
 sns:info <name>                 Print the connection information
 sns:link <name> <app>           Link the sns service to the app
 sns:list                        List all sns services
@@ -37,7 +38,8 @@ sns:stop <name>                 Stop a running sns service
 sns:topic:add <name> <topic>    Creates an sns topic
 sns:topic:remove <name> <topic> Removes an sns topic
 sns:topics <name>               List all sns topics for this service
-sns:unlink <name> <app>         Unlink the mysql service from the app
+sns:unexpose <name>             Unexpose a previously exposed sns service
+sns:unlink <name> <app>         Unlink the sns service from the app
 
 ```
 
@@ -68,30 +70,51 @@ dokku sns:info lolipop
 # NOTE: this will restart your app
 dokku sns:link lolipop playground
 
-The following will be set on the linked application by default
+# the following environment variables will be set automatically by docker (not
+# on the app itself, so they won’t be listed when calling dokku config)
 #
-#   FAKESNS_URL=http://dokku-sns-lolipop:9292
+#   DOKKU_SNS_LOLIPOP_NAME=/lolipop/dokku-sns-lolipop
+#   DOKKU_SNS_LOLIPOP_PORT=tcp://172.17.0.1:9292
+#   DOKKU_SNS_LOLIPOP_PORT_9292_TCP=tcp://172.17.0.1:9292
+#   DOKKU_SNS_LOLIPOP_PORT_9292_TCP_PROTO=tcp
+#   DOKKU_SNS_LOLIPOP_PORT_9292_TCP_PORT=9292
+#   DOKKU_SNS_LOLIPOP_PORT_9292_TCP_ADDR=172.17.0.1
 #
+# and the following will be set on the linked application by default
+#
+#   SNS_URL=http://dokku-sns-lolipop:9292
+#
+# NOTE: the host exposed here only works internally in docker containers. If
+# you want your container to be reachable from outside, you should use `expose`.
 
 # another service can be linked to your app
 dokku sns:link other_service playground
 
-# since sns_URL is already in use, another environment variable will be
+# since SNS_URL is already in use, another environment variable will be
 # generated automatically
 #
-#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9292
+#   DOKKU_SNS_BLUE_URL=http://dokku-sns-other-service:9292
 
 # you can then promote the new service to be the primary one
 # NOTE: this will restart your app
 dokku sns:promote other_service playground
 
-# this will replace sns_URL with the url from other_service and generate
+# this will replace SNS_URL with the url from other_service and generate
 # another environment variable to hold the previous value if necessary.
 # you could end up with the following for example:
 #
-#   FAKESNS_URL=http://dokku-sns-other-service:9292
-#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9292
-#   DOKKU_FAKESNS_SILVER_URL=http://dokku-sns-lolipop:9292
+#   SNS_URL=http://dokku-sns-other-service:9292
+#   DOKKU_SNS_BLUE_URL=http://dokku-sns-other-service:9292
+#   DOKKU_SNS_SILVER_URL=http://dokku-sns-lolipop:9292
+
+# you can create SNS topics
+dokku sns:topic:add lolipop topic
+
+# also list them
+dokku sns:topics lolipop
+
+# and of course remove them
+dokku sns:topic:remove lolipop topic
 
 # you can also unlink an sns service
 # NOTE: this will restart your app and unset related environment variables
