@@ -43,7 +43,15 @@ case "$1" in
     fi
     ;;
   exec)
-    echo "exec called with $@"
+    if [[ $@ = *"list-topics --output text | cut -d: -f6 | egrep ^m$"* ]]; then
+      echo "m"
+      exit 0
+    elif [[ $@ = *"list-topics --output text | cut -d: -f6 | egrep ^l$"* ]]; then
+      echo ""
+      exit 0
+    else
+      echo "exec called with $@"
+    fi
     ;;
   inspect)
     if [[ $@ = *"IPAddress"* ]]; then
@@ -80,6 +88,7 @@ case "$1" in
     echo "redis                     3.0.3               9216d5a4eec8        13 days ago         109.3 MB"
     echo "rethinkdb                 2.1.1               f27010a550ec        13 days ago         196.3 MB"
     echo "svendowideit/ambassador   latest              0d2200edc53e        21 months ago       7.241 MB"
+    echo "seayou/fake-sns           latest              3b7645ad0fb3        5 days ago          106.2 MB"
     ;;
   pull)
     exit 0

@@ -35,19 +35,19 @@ teardown() {
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) error when the service is already promoted" {
   run dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
-  assert_contains "${lines[*]}" "already promoted as ELASTICSEARCH_URL"
+  assert_contains "${lines[*]}" "already promoted as SNS_URL"
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:promote) changes ELASTICSEARCH_URL" {
-  dokku config:set my_app "ELASTICSEARCH_URL=http://host:9200" "DOKKU_ELASTICSEARCH_BLUE_URL=http://dokku-elasticsearch-l:9200"
+@test "($PLUGIN_COMMAND_PREFIX:promote) changes SNS_URL" {
+  dokku config:set my_app "SNS_URL=http://host:9292" "DOKKU_SNS_BLUE_URL=http://dokku-sns-l:9292"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
-  url=$(dokku config:get my_app ELASTICSEARCH_URL)
-  assert_equal "$url" "http://dokku-elasticsearch-l:9200"
+  url=$(dokku config:get my_app SNS_URL)
+  assert_equal "$url" "http://dokku-sns-l:9292"
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:promote) creates new config url when needed" {
-  dokku config:set my_app "ELASTICSEARCH_URL=http://host:9200" "DOKKU_ELASTICSEARCH_BLUE_URL=http://dokku-elasticsearch-l:9200"
+  dokku config:set my_app "SNS_URL=http://host:9292" "DOKKU_SNS_BLUE_URL=http://dokku-sns-l:9292"
   dokku "$PLUGIN_COMMAND_PREFIX:promote" l my_app
   run dokku config my_app
-  assert_contains "${lines[*]}" "DOKKU_ELASTICSEARCH_"
+  assert_contains "${lines[*]}" "DOKKU_SNS_"
 }

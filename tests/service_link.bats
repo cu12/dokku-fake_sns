@@ -34,27 +34,27 @@ teardown() {
 @test "($PLUGIN_COMMAND_PREFIX:link) error when the service is already linked to app" {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   run dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
-  assert_contains "${lines[*]}" "Already linked as ELASTICSEARCH_URL"
+  assert_contains "${lines[*]}" "Already linked as SNS_URL"
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:link) exports ELASTICSEARCH_URL to app" {
+@test "($PLUGIN_COMMAND_PREFIX:link) exports SNS_URL to app" {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
-  url=$(dokku config:get my_app ELASTICSEARCH_URL)
-  assert_contains "$url" "http://dokku-elasticsearch-l:9200"
+  url=$(dokku config:get my_app SNS_URL)
+  assert_contains "$url" "http://dokku-sns-l:9292"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:link) generates an alternate config url when ELASTICSEARCH_URL already in use" {
-  dokku config:set my_app ELASTICSEARCH_URL=http://host:9200
+@test "($PLUGIN_COMMAND_PREFIX:link) generates an alternate config url when SNS_URL already in use" {
+  dokku config:set my_app SNS_URL=http://host:9292
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   run dokku config my_app
-  assert_contains "${lines[*]}" "DOKKU_ELASTICSEARCH_"
+  assert_contains "${lines[*]}" "DOKKU_FAKESNS_"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:link) links to app with docker-options" {
   dokku "$PLUGIN_COMMAND_PREFIX:link" l my_app
   run dokku docker-options my_app
-  assert_contains "${lines[*]}" "--link dokku.elasticsearch.l:dokku-elasticsearch-l"
+  assert_contains "${lines[*]}" "--link dokku.sns.l:dokku-sns-l"
   dokku "$PLUGIN_COMMAND_PREFIX:unlink" l my_app
 }
