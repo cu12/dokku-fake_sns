@@ -1,5 +1,7 @@
 [![Build Status](https://travis-ci.org/cu12/dokku-fake_sns.svg?branch=master)](https://travis-ci.org/cu12/dokku-fake_sns)
 
+[![Dokku](https://avatars1.githubusercontent.com/u/13455795)](https://github.com/dokku/dokku)
+
 # dokku fake_sns (beta)
 
 fake_sns plugin for dokku. Currently defaults to installing [seayou/fake-sns](https://hub.docker.com/r/seayou/fake-sns/)
