@@ -128,7 +128,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an SNS topic name"
     verify_service_name "$2"
-    verify_topic_name "$2" "$3"
+    verify_topic_add_name "$2" "$3"
     SERVICE="$2"; TOPIC_NAME="$3"
     SERVICE_NAME="$(get_service_name "$SERVICE")"
     AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
@@ -142,7 +142,7 @@ case "$1" in
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     [[ -z $3 ]] && dokku_log_fail "Please specify an SNS topic name"
     verify_service_name "$2"
-    verify_topic_name "$2" "$3"
+    verify_topic_remove_name "$2" "$3"
     SERVICE="$2"; TOPIC_NAME="$3"
     SERVICE_NAME="$(get_service_name "$SERVICE")"
     AWS_CONFIG="AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake"
@@ -161,6 +161,18 @@ case "$1" in
     [[ -n $SSH_TTY ]] && stty -opost
     docker exec "$SERVICE_NAME" /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text"
     [[ -n $SSH_TTY ]] && stty opost
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:expose)
+    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+    verify_service_name "$2"
+    service_port_expose "$2" "${@:3}"
+    ;;
+
+  $PLUGIN_COMMAND_PREFIX:unexpose)
+    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
+    verify_service_name "$2"
+    service_port_unexpose "$2"
     ;;
 
   $PLUGIN_COMMAND_PREFIX:logs)
@@ -187,14 +199,6 @@ case "$1" in
     service_stop "$2"
     service_start "$2"
     dokku_log_info1 "Please call dokku ps:restart on all linked apps"
-    ;;
-
-  $PLUGIN_COMMAND_PREFIX:connect)
-    [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
-    verify_service_name "$2"
-    SERVICE="$2"; SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
-
-    dokku_log_fail "Not yet implemented"
     ;;
 
   $PLUGIN_COMMAND_PREFIX:info)
@@ -228,6 +232,8 @@ case "$1" in
     $PLUGIN_COMMAND_PREFIX:restart <name>, Graceful shutdown and restart of the $PLUGIN_SERVICE service container
     $PLUGIN_COMMAND_PREFIX:info <name>, Print the connection information
     $PLUGIN_COMMAND_PREFIX:list, List all $PLUGIN_SERVICE services
+    $PLUGIN_COMMAND_PREFIX:expose <name> [port], Expose a $PLUGIN_SERVICE service on custom port if provided (random port otherwise)
+    $PLUGIN_COMMAND_PREFIX:unexpose <name>, Unexpose a previously exposed $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:start <name>, Start a previously stopped $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:stop <name>, Stop a running $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:promote <name> <app>, Promote service <name> as ${PLUGIN_DEFAULT_ALIAS}_URL in <app>

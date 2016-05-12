@@ -2,6 +2,23 @@
 set -eo pipefail; [[ $DOKKU_TRACE ]] && set -x
 source "$(dirname "$0")/config"
 
+get_random_ports() {
+  local iterations="${1:-1}"
+  for (( i=0; i < iterations; i++ )); do
+    local port=$RANDOM
+    local quit=0
+    while [ "$quit" -ne 1 ]; do
+      netstat -an | grep $port > /dev/null
+      if [ $? -gt 0 ]; then
+        quit=1
+      else
+        port=$((port + 1))
+      fi
+    done
+    echo $port
+  done
+}
+
 verify_service_name() {
   local SERVICE="$1"
   [[ ! -n "$SERVICE" ]] && dokku_log_fail "(verify_service_name) SERVICE must not be null"
@@ -44,7 +61,26 @@ verify_topic_name() {
   [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE does not exist"
   SERVICE_NAME="$(get_service_name "$SERVICE")"
   SERVICE_TOPIC_NAME="$(docker exec $SERVICE_NAME /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text | cut -d: -f6 | egrep ^$TOPIC_NAME$" || true)"
-  [[ -n "$SERVICE_TOPIC_NAME" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic already exist: $TOPIC_NAME"
+  return 0
+}
+
+verify_topic_add_name() {
+  local SERVICE="$1"
+  local TOPIC_NAME="$2"
+  verify_topic_name "$SERVICE" "$TOPIC_NAME"
+  if [[ -n "$SERVICE_TOPIC_NAME" ]]; then
+    dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic already exist: $TOPIC_NAME"
+  fi
+  return 0
+}
+
+verify_topic_remove_name() {
+  local SERVICE="$1"
+  local TOPIC_NAME="$2"
+  verify_topic_name "$SERVICE" "$TOPIC_NAME"
+  if [[ -z "$SERVICE_TOPIC_NAME" ]]; then
+    dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic does not exist: $TOPIC_NAME"
+  fi
   return 0
 }
 
@@ -201,6 +237,11 @@ service_status() {
   echo "stopped" && return 0
 }
 
+service_port_expose() {
+  service_start "$1"
+  service_port_unpause "$1" "true" "${@:2}"
+}
+
 service_port_pause() {
   local SERVICE="$1"
   local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
@@ -219,6 +260,49 @@ service_port_pause() {
   if [[ "$LOG_FAIL" == "true" ]]; then
     dokku_log_info1 "Service $SERVICE unexposed"
   fi
+}
+
+service_port_unexpose() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local PORT_FILE="$SERVICE_ROOT/PORT"
+  service_port_pause "$SERVICE" "true"
+  rm -rf "$PORT_FILE"
+}
+
+service_port_unpause() {
+  local SERVICE="$1"
+  local SERVICE_ROOT="$PLUGIN_DATA_ROOT/$SERVICE"
+  local SERVICE_NAME=$(get_service_name "$SERVICE")
+  local EXPOSED_NAME="${SERVICE_NAME}.ambassador"
+  local PORT_FILE="$SERVICE_ROOT/PORT"
+  local LOG_FAIL="$2"
+  local PORTS=(${@:3})
+  PORTS=(${PORTS[@]:-$(get_random_ports ${#PLUGIN_DATASTORE_PORTS[@]})})
+  local ID=$(cat "$SERVICE_ROOT/ID")
+
+  [[ "${#PORTS[@]}" != "${#PLUGIN_DATASTORE_PORTS[@]}" ]] && dokku_log_fail "${#PLUGIN_DATASTORE_PORTS[@]} ports to be exposed need to be provided"
+
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    [[ -f "$PORT_FILE" ]] && PORTS=($(cat "$PORT_FILE")) && dokku_log_fail "Service $SERVICE already exposed on port(s) ${PORTS[*]}"
+  else
+    [[ ! -f "$PORT_FILE" ]] && return 0
+    PORTS=($(cat "$PORT_FILE"))
+  fi
+
+  echo "${PORTS[@]}" > "$PORT_FILE"
+
+  docker run -d --link "$SERVICE_NAME:fakesns" --name "$EXPOSED_NAME" $(docker_ports_options "${PORTS[@]}") --restart always --label dokku=ambassador --label dokku.ambassador=elasticsearch svendowideit/ambassador > /dev/null
+  if [[ "$LOG_FAIL" == "true" ]]; then
+    dokku_log_info1 "Service $SERVICE exposed on port(s) ${PORTS[*]}"
+  fi
+}
+
+docker_ports_options() {
+  local PORTS=("$@")
+  for (( i=0; i < ${#PLUGIN_DATASTORE_PORTS[@]}; i++ )); do
+    echo -n "-p ${PORTS[i]}:${PLUGIN_DATASTORE_PORTS[i]} "
+  done
 }
 
 service_start() {

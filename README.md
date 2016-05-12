@@ -22,18 +22,21 @@ dokku plugin:install https://github.com/cu12/dokku-fake_sns.git fake_sns
 ## commands
 
 ```
-sns:addtopic <name> <topic>     Creates an sns topic
 sns:create <name>               Create a sns service with environment variables
 sns:destroy <name>              Delete the service and stop its container if there are no links left
 sns:info <name>                 Print the connection information
 sns:link <name> <app>           Link the sns service to the app
 sns:list                        List all sns services
-sns:topics <name>               List all sns topics for this service
 sns:logs <name> [-t]            Print the most recent log(s) for this service
-sns:removetopic <name> <topic>  Removes an sns topic
+sns:promote <name> <app>        Promote service <name> as SNS_URL in <app>
 sns:restart <name>              Graceful shutdown and restart of the sns service container
 sns:start <name>                Start a previously stopped sns service
 sns:stop <name>                 Stop a running sns service
+sns:topic:add <name> <topic>    Creates an sns topic
+sns:topic:remove <name> <topic> Removes an sns topic
+sns:topics <name>               List all sns topics for this service
+sns:unlink <name> <app>         Unlink the mysql service from the app
+
 ```
 
 ## usage
@@ -46,7 +49,7 @@ dokku sns:create lolipop
 # version to use for the service
 # it *must* be compatible with the
 # official sns image
-# In fact you could any other software that is working with `aws sqs` commands
+# In fact you could any other software that is working with `aws sns` commands
 export FAKESNS_IMAGE="seayou/fake-sns"
 export FAKESNS_IMAGE_VERSION="latest"
 
@@ -65,7 +68,7 @@ dokku sns:link lolipop playground
 
 The following will be set on the linked application by default
 #
-#   FAKESNS_URL=http://dokku-sns-lolipop:9200
+#   FAKESNS_URL=http://dokku-sns-lolipop:9292
 #
 
 # another service can be linked to your app
@@ -74,7 +77,7 @@ dokku sns:link other_service playground
 # since sns_URL is already in use, another environment variable will be
 # generated automatically
 #
-#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9200
+#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9292
 
 # you can then promote the new service to be the primary one
 # NOTE: this will restart your app
@@ -84,9 +87,9 @@ dokku sns:promote other_service playground
 # another environment variable to hold the previous value if necessary.
 # you could end up with the following for example:
 #
-#   FAKESNS_URL=http://dokku-sns-other-service:9200
-#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9200
-#   DOKKU_FAKESNS_SILVER_URL=http://dokku-sns-lolipop:9200
+#   FAKESNS_URL=http://dokku-sns-other-service:9292
+#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9292
+#   DOKKU_FAKESNS_SILVER_URL=http://dokku-sns-lolipop:9292
 
 # you can also unlink an sns service
 # NOTE: this will restart your app and unset related environment variables
