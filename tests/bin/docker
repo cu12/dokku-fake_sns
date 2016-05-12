@@ -43,10 +43,10 @@ case "$1" in
     fi
     ;;
   exec)
-    if [[ $@ = *"list-topics --output text | cut -d: -f6 | egrep ^m$"* ]]; then
-      echo "m"
+    if [[ $@ = *"list-topics --output text | egrep ^.*:m$"* ]]; then
+      echo "arn:aws:sns:us-east-1:caa5f01afa5407cddc80a714a0d002d9:m"
       exit 0
-    elif [[ $@ = *"list-topics --output text | cut -d: -f6 | egrep ^l$"* ]]; then
+    elif [[ $@ = *"list-topics --output text | egrep ^.*:l$"* ]]; then
       echo ""
       exit 0
     else
