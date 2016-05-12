@@ -60,7 +60,7 @@ verify_topic_name() {
   [[ ! -n "$TOPIC_NAME" ]] && dokku_log_fail "(verify_topic_name) TOPIC_NAME must not be null"
   [[ ! -d "$PLUGIN_DATA_ROOT/$SERVICE" ]] && dokku_log_fail "$PLUGIN_SERVICE service $SERVICE does not exist"
   SERVICE_NAME="$(get_service_name "$SERVICE")"
-  SERVICE_TOPIC_NAME="$(docker exec $SERVICE_NAME /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text | cut -d: -f6 | egrep ^$TOPIC_NAME$" || true)"
+  SERVICE_TOPIC_ARN="$(docker exec $SERVICE_NAME /usr/bin/env sh -c "$AWS_CONFIG aws --endpoint-url http://localhost:9292 sns list-topics --output text | egrep ^.*:$TOPIC_NAME$" || true)"
   return 0
 }
 
@@ -68,7 +68,7 @@ verify_topic_add_name() {
   local SERVICE="$1"
   local TOPIC_NAME="$2"
   verify_topic_name "$SERVICE" "$TOPIC_NAME"
-  if [[ -n "$SERVICE_TOPIC_NAME" ]]; then
+  if [[ -n "$SERVICE_TOPIC_ARN" ]]; then
     dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic already exist: $TOPIC_NAME"
   fi
   return 0
@@ -78,7 +78,7 @@ verify_topic_remove_name() {
   local SERVICE="$1"
   local TOPIC_NAME="$2"
   verify_topic_name "$SERVICE" "$TOPIC_NAME"
-  if [[ -z "$SERVICE_TOPIC_NAME" ]]; then
+  if [[ -z "$SERVICE_TOPIC_ARN" ]]; then
     dokku_log_fail "$PLUGIN_SERVICE service $SERVICE topic does not exist: $TOPIC_NAME"
   fi
   return 0
