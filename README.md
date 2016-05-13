@@ -106,8 +106,8 @@ dokku sns:promote other_service playground
 # you could end up with the following for example:
 #
 #   SNS_URL=http://dokku-sns-other-service:9292
-#   DOKKU_SNS_BLUE_URL=http://dokku-sns-other-service:9292
-#   DOKKU_SNS_SILVER_URL=http://dokku-sns-lolipop:9292
+#   DOKKU_FAKESNS_BLUE_URL=http://dokku-sns-other-service:9292
+#   DOKKU_FAKESNS_SILVER_URL=http://dokku-sns-lolipop:9292
 
 # you can create SNS topics
 dokku sns:topic:add lolipop topic
