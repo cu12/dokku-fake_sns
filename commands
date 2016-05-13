@@ -152,7 +152,7 @@ case "$1" in
     dokku_log_info2 "$PLUGIN_SERVICE topic removed: $TOPIC_NAME"
     ;;
 
-  $PLUGIN_COMMAND_PREFIX:topics)
+  $PLUGIN_COMMAND_PREFIX:topic:list)
     [[ -z $2 ]] && dokku_log_fail "Please specify a name for the service"
     verify_service_name "$2"
     SERVICE="$2"
@@ -227,7 +227,7 @@ case "$1" in
     $PLUGIN_COMMAND_PREFIX:unlink <name> <app>, Unlink the $PLUGIN_SERVICE service from the app
     $PLUGIN_COMMAND_PREFIX:topic:add <name> <topic>, Creates an SNS topic
     $PLUGIN_COMMAND_PREFIX:topic:remove <name> <topic>, Removes an SNS topic
-    $PLUGIN_COMMAND_PREFIX:topics <name>, List all SNS topics in specific $PLUGIN_SERVICE service
+    $PLUGIN_COMMAND_PREFIX:topic:list <name>, List all SNS topics in specific $PLUGIN_SERVICE service
     $PLUGIN_COMMAND_PREFIX:logs <name> [-t], Print the most recent log(s) for this service
     $PLUGIN_COMMAND_PREFIX:restart <name>, Graceful shutdown and restart of the $PLUGIN_SERVICE service container
     $PLUGIN_COMMAND_PREFIX:info <name>, Print the connection information

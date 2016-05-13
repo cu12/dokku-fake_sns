@@ -39,7 +39,7 @@ sns:start <name>                Start a previously stopped sns service
 sns:stop <name>                 Stop a running sns service
 sns:topic:add <name> <topic>    Creates an sns topic
 sns:topic:remove <name> <topic> Removes an sns topic
-sns:topics <name>               List all sns topics for this service
+sns:topic:list <name>           List all sns topics for this service
 sns:unexpose <name>             Unexpose a previously exposed sns service
 sns:unlink <name> <app>         Unlink the sns service from the app
 
@@ -113,7 +113,7 @@ dokku sns:promote other_service playground
 dokku sns:topic:add lolipop topic
 
 # also list them
-dokku sns:topics lolipop
+dokku sns:topic:list lolipop
 
 # and of course remove them
 dokku sns:topic:remove lolipop topic
