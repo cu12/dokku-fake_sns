@@ -30,11 +30,11 @@ teardown() {
 }
 
 @test "($PLUGIN_COMMAND_PREFIX:topic:list) error when service does not exist" {
-  run dokku "$PLUGIN_COMMAND_PREFIX:topics" not_existing_service
+  run dokku "$PLUGIN_COMMAND_PREFIX:topic:list" not_existing_service
   assert_contains "${lines[*]}" "Fakesns service not_existing_service does not exist"
 }
 
-@test "($PLUGIN_COMMAND_PREFIX:topics) success when topics are listed" {
+@test "($PLUGIN_COMMAND_PREFIX:topic:list) success when topics are listed" {
   export ECHO_DOCKER_COMMAND="true"
   run dokku "$PLUGIN_COMMAND_PREFIX:topic:list" l
   assert_output "docker exec dokku.sns.l /usr/bin/env sh -c AWS_ACCESS_KEY_ID=fake AWS_SECRET_ACCESS_KEY=fake AWS_DEFAULT_REGION=fake aws --endpoint-url http://localhost:9292 sns list-topics --output text"
